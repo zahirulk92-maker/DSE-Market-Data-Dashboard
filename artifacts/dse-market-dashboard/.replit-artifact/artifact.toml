@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "DSE Market Dashboard"
+description = "A dark, operator-focused dashboard for browsing Dhaka Stock Exchange market data, monitoring historical backfill progress, and inspecting OHLCV charts by symbol."
+version = "1.0.0"
+id = "artifacts/dse-market-dashboard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24764
+
+[services.development]
+run = "pnpm --filter @workspace/dse-market-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/dse-market-dashboard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/dse-market-dashboard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24764"
+BASE_PATH = "/"

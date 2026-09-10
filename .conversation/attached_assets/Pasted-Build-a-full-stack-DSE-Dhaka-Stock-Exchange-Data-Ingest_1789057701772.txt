@@ -1,0 +1,41 @@
+Build a full-stack DSE (Dhaka Stock Exchange) Data Ingestion Engine & Interactive Dashboard in Python (FastAPI/Flask) running on port 8080.
+
+I. UI Layout & Visual Design (Dark Theme matching TradingView/StockNow):
+1. Top Engine Controller Header:
+   - Metric Badges: Total Stocks (~390), Completed, Pending, In-Progress Symbol.
+   - Progress Bar: Completed / Total percentage.
+   - Next Stock Countdown Timer: Real-time 5:00 countdown clock ticking down to the next scraping cycle.
+   - Last Ingestion Info: "Last synced: [SYMBOL] - [COUNT] historical days stored at [TIME]".
+
+2. Main Body (2-Column Split Layout):
+   - Left Area (Chart Viewer):
+     * Integrate TradingView Lightweight Charts (lightweight-charts CDN).
+     * Render Candlestick (OHLC) and Volume sub-chart based on the 1-year historical data stored for the selected stock.
+     * Allow switching between Candlestick and Line chart, with a timeframe/range indicator.
+   - Right Sidebar (Sectors & Stocks List):
+     * Dark sleek panel just like StockNow sidebar.
+     * Collapsible or grouped by Sectors: Bank, Cement, Ceramics, Engineering, Financial Institutions, Food & Allied, Fuel & Power, Insurance, IT Sector, Pharmaceuticals, Telecommunication, Textile, etc.
+     * Display columns: Symbol / Sector Code, Last Close Price, and % Change (formatted in Green for positive, Red for negative).
+     * Clicking any stock in this list instantly fetches its 1-year history from Supabase and renders the chart in the left area.
+
+II. Background Ingestion Worker (Python Thread):
+1. Initialize Target Queue:
+   - Check Supabase 'dse_backfill_tracker'. If empty, seed all active DSE tickers (~390 symbols) with status='pending'.
+2. 5-Minute Iteration Cycle:
+   - Pick the first stock with status='pending' and set status='in_progress'.
+   - Scrape 1-year historical daily OHLCV (Date, Open, High, Low, Close, Volume) for that specific symbol from DSE archive/endpoints.
+   - Bulk upsert historical records into Supabase table 'dse_daily_history' (unique constraint on trade_date, symbol).
+   - Set status='completed' in 'dse_backfill_tracker', update 'total_records_inserted', and refresh the UI state via API or SSE/WebSockets.
+   - Sleep for 300 seconds (5 minutes) before picking the next stock to strictly respect rate limits and avoid DSE IP blocks.
+   - Robust try/except: if any symbol encounters an error or network timeout, mark status='failed' and continue to the next stock after 5 minutes.
+
+III. Supabase Database Connection:
+- Read SUPABASE_URL and SUPABASE_KEY from environment variables (Replit Secrets).
+- Tables used:
+  1) dse_backfill_tracker (symbol PK, status, total_records_inserted, last_updated)
+  2) dse_daily_history (id PK, trade_date, symbol, sector, open, high, low, close, volume, unique(trade_date, symbol))
+  3) dse_market_data (symbol PK, sector, ltp, ycp, change, high, low, volume, updated_at)
+
+IV. Setup & Dependencies:
+- Automatically generate requirements.txt with: fastapi, uvicorn, requests, beautifulsoup4, supabase, python-dotenv.
+- Ensure the server serves the UI on 0.0.0.0:8080 so Replit Webview automatically opens it.
