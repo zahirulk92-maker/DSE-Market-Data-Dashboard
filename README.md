@@ -104,3 +104,115 @@ DSE-Market-Data-Dashboard/
 ├── package.json
 ├── pnpm-workspace.yaml
 └── tsconfig.base.json
+⚙️ Installation
+1. Clone the repository
+git clone https://github.com/zahirulk92-maker/DSE-Market-Data-Dashboard.git
+2. Enter the project
+cd DSE-Market-Data-Dashboard
+3. Install dependencies
+
+This project uses pnpm.
+
+pnpm install
+▶️ Development
+Start the API server
+pnpm --filter @workspace/api-server run dev
+
+The API server runs on port:
+
+8080
+Start the dashboard
+pnpm --filter @workspace/dse-market-dashboard run dev
+✅ Type Check
+pnpm run typecheck
+🏗️ Build
+pnpm run build
+🔄 Generate API Client
+
+After modifying the OpenAPI specification:
+
+pnpm --filter @workspace/api-spec run codegen
+🔐 Environment Configuration
+
+Supabase credentials are managed outside the application source code.
+
+An optional environment variable can be configured for live DSE historical data ingestion:
+
+DSE_HISTORY_ENDPOINT=
+
+The endpoint may contain a symbol placeholder:
+
+{symbol}
+
+Example concept:
+
+https://example.com/history/{symbol}
+
+Do not commit API keys, database passwords, or other secrets to the repository.
+
+🧠 Architecture
+
+The application follows a workspace-based architecture containing separate frontend, backend, API specification, and shared project components.
+
+The dashboard communicates with the backend API, while the backend handles database access and DSE market-data ingestion.
+
+DSE Data Source
+      │
+      ▼
+Ingestion Worker
+      │
+      ▼
+PostgreSQL / Supabase
+      │
+      ▼
+Express API
+      │
+      ▼
+React Dashboard
+      │
+      ▼
+Interactive Market Charts
+🗺️ Roadmap
+
+Planned improvements include:
+
+ Live DSE market feed
+ Complete historical data ingestion
+ Advanced candlestick charts
+ Technical indicators
+ Market movers
+ Top gainers and losers
+ Sector performance
+ Company fundamentals
+ Watchlist
+ Portfolio tracking
+ Market alerts
+ Improved analytics
+ Production deployment
+🇧🇩 Purpose
+
+The goal of this project is to build a modern and extensible market-data platform focused on the Dhaka Stock Exchange (DSE) and the Bangladesh capital market.
+
+🤝 Contributing
+
+Contributions, bug reports, feature suggestions, and improvements are welcome.
+
+Recommended workflow:
+
+Create Branch
+    ↓
+Make Changes
+    ↓
+Test
+    ↓
+Commit
+    ↓
+Open Pull Request
+    ↓
+Review
+    ↓
+Merge
+📄 License
+
+This project is licensed under the MIT License.
+
