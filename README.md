@@ -150,11 +150,9 @@ Before deploying the collector, apply `supabase/migrations/20260911000000_create
 ```text
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<server-only secret>
-DSE_LATEST_URL=<JSON endpoint returning all current DSE stocks>
-DSE_HISTORY_URL=<JSON endpoint; supports {symbol}, {start}, and {end} placeholders>
 ```
 
-`DSE_DATA_SOURCE_TOKEN` is optional for providers that require a bearer token. Never place the Supabase service-role key in the React frontend.
+The collector uses the public `bdshare` Python package to crawl DSE current and historical data; no separate DSE data URL or token is required. Never place the Supabase service-role key in the React frontend.
 
 Do not commit API keys, database passwords, or other secrets to the repository.
 

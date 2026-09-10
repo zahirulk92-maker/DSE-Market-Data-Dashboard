@@ -9,15 +9,13 @@ import threading
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+
+from bdshare import get_current_trade_data, get_historical_data
 
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
-LATEST_URL = os.environ["DSE_LATEST_URL"]
-HISTORY_URL = os.environ["DSE_HISTORY_URL"]
-SOURCE_TOKEN = os.environ.get("DSE_DATA_SOURCE_TOKEN")
 BATCH_SIZE = max(1, int(os.environ.get("DSE_BACKFILL_BATCH_SIZE", "3")))
 INTERVAL_SECONDS = max(60, int(os.environ.get("DSE_COLLECTION_INTERVAL_SECONDS", "300")))
 STOP_REQUESTED = threading.Event()
@@ -32,8 +30,6 @@ def api_request(url: str, method: str = "GET", payload: Any = None, headers: dic
     request_headers = {"Accept": "application/json", "User-Agent": "DSE-Market-Data-Dashboard/1.0"}
     if body is not None:
         request_headers["Content-Type"] = "application/json"
-    if SOURCE_TOKEN:
-        request_headers["Authorization"] = f"Bearer {SOURCE_TOKEN}"
     request_headers.update(headers or {})
     request = Request(url, data=body, method=method, headers=request_headers)
     try:
@@ -79,7 +75,7 @@ def number(value: Any) -> float:
 
 
 def current_stocks() -> list[dict[str, Any]]:
-    payload = api_request(LATEST_URL)
+    payload = get_current_trade_data().to_dict(orient="records")
     result = []
     for row in rows(payload):
         symbol = str(field(row, "symbol", "trading_code", "code", "ticker", default="")).strip().upper()
@@ -89,19 +85,16 @@ def current_stocks() -> list[dict[str, Any]]:
         ycp = number(field(row, "ycp", "previous_close", default=0))
         result.append({"symbol": symbol, "sector": str(field(row, "sector", "category", default="Unclassified")), "ltp": ltp, "ycp": ycp, "change": number(field(row, "change", "price_change", default=ltp - ycp)), "high": number(field(row, "high", default=ltp)), "low": number(field(row, "low", default=ltp)), "volume": int(number(field(row, "volume", default=0))), "updated_at": now()})
     if not result:
-        raise RuntimeError("DSE_LATEST_URL returned no recognizable stock rows")
+        raise RuntimeError("bdshare returned no recognizable DSE stock rows")
     return result
 
 
 def history_for(symbol: str) -> list[dict[str, Any]]:
     end = date.today()
     start = end - timedelta(days=366)
-    separator = "&" if "?" in HISTORY_URL else "?"
-    url = HISTORY_URL.format(symbol=symbol, start=start.isoformat(), end=end.isoformat())
-    if "{" not in HISTORY_URL:
-        url = f"{url}{separator}{urlencode({'symbol': symbol, 'start': start.isoformat(), 'end': end.isoformat()})}"
+    payload = get_historical_data(start.isoformat(), end.isoformat(), symbol).reset_index().to_dict(orient="records")
     result = []
-    for row in rows(api_request(url)):
+    for row in payload:
         trade_date = str(field(row, "trade_date", "date", "trading_date", default=""))[:10]
         if not trade_date:
             continue
