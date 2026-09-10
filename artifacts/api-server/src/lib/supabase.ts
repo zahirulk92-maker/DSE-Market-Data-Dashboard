@@ -1,27 +1,35 @@
-import { ReplitConnectors } from "@replit/connectors-sdk";
-
-const connectors = new ReplitConnectors();
-
 type SupabaseRequestInit = Omit<RequestInit, "headers"> & {
   headers?: Record<string, string>;
 };
+
+function getSupabaseConfig() {
+  const url = process.env.SUPABASE_URL?.replace(/\/$/, "");
+  const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+
+  if (!url || !apiKey) {
+    throw new Error(
+      "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY) must be configured.",
+    );
+  }
+
+  return { url, apiKey };
+}
 
 export async function supabaseRequest<T>(
   tablePath: string,
   init: SupabaseRequestInit = {},
 ): Promise<T> {
-  const response = await connectors.proxy(
-    "supabase",
-    `/rest/v1/${tablePath}`,
-    {
-      ...init,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        ...init.headers,
-      },
+  const { url, apiKey } = getSupabaseConfig();
+  const response = await fetch(`${url}/rest/v1/${tablePath}`, {
+    ...init,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      apikey: apiKey,
+      Authorization: `Bearer ${apiKey}`,
+      ...init.headers,
     },
-  );
+  });
 
   if (!response.ok) {
     const body = await response.text();

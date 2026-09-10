@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: dse-market-data-dashboard
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: pnpm install --frozen-lockfile && pnpm run typecheck && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/dse-market-dashboard run build
+    startCommand: pnpm --filter @workspace/api-server run start
+    healthCheckPath: /api/healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DSE_HISTORY_ENDPOINT
+        sync: false

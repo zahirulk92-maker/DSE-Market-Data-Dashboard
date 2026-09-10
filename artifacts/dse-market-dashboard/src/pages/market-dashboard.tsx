@@ -351,6 +351,11 @@ export default function MarketDashboard() {
   const sectors = overview?.sectors || [];
   const selectedStock = stocks?.find((stock) => stock.symbol === selectedSymbol) || overview?.stocks?.find((stock) => stock.symbol === selectedSymbol);
   const history = historyQuery.data;
+  const ingestion = ingestionQuery.data || overview?.ingestion;
+  const countdown = ingestion?.nextRunAt
+    ? Math.max(0, Math.ceil((new Date(ingestion.nextRunAt).getTime() - Date.now()) / 1000))
+    : 0;
+  const ingestionRunning = Boolean(ingestion?.inProgress) || ingestionMutation.isPending;
   const historyChange = history?.length ? history[history.length - 1].close - history[0].open : 0;
   const historyVolume = history?.reduce((total, point) => total + point.volume, 0) || 0;
 
@@ -416,7 +421,7 @@ export default function MarketDashboard() {
                   </div>
                 </div>
               </section>
-              <IngestionCard ingestion={ingestionQuery.data || overview?.ingestion} loading={ingestionQuery.isLoading && !overview?.ingestion} onStart={startIngestion} pending={ingestionMutation.isPending} />
+              <IngestionCard ingestion={ingestion} loading={ingestionQuery.isLoading && !overview?.ingestion} onStart={startIngestion} pending={ingestionMutation.isPending} countdown={countdown} running={ingestionRunning} />
             </div>
 
             <section className="mt-5 rounded-lg border border-border bg-card">
