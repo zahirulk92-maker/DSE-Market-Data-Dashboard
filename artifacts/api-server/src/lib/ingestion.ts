@@ -2,11 +2,19 @@ import { logger } from "./logger";
 import { supabaseRequest } from "./supabase";
 import { getDemoStocks } from "./dse-data";
 
-type TrackerRow = {
+export type TrackerRow = {
   symbol: string;
   status: "pending" | "in_progress" | "completed" | "failed";
   total_records_inserted?: number | null;
   last_updated?: string | null;
+};
+
+export type IngestionLog = {
+  time: string;
+  symbol: string;
+  status: string;
+  message: string;
+  records: number;
 };
 
 export type IngestionStatus = {
@@ -23,6 +31,7 @@ export type IngestionStatus = {
 const fiveMinutes = 5 * 60 * 1000;
 let workerRunning = false;
 let workerStarted = false;
+let activeSymbol = "";
 let localTracker: TrackerRow[] = getDemoStocks().map((stock, index) => ({
   symbol: stock.symbol,
   status: index < 5 ? "completed" : "pending",
@@ -32,6 +41,31 @@ let localTracker: TrackerRow[] = getDemoStocks().map((stock, index) => ({
 let lastSynced = "SQURPHARMA";
 let lastRecords = 252;
 let nextRunAt = new Date(Date.now() + fiveMinutes).toISOString();
+const ingestionLogs: IngestionLog[] = [
+  {
+    time: new Date().toISOString(),
+    symbol: "—",
+    status: "info",
+    message: "Worker ready. Waiting for the next ingestion cycle.",
+    records: 0,
+  },
+];
+
+function addLog(
+  symbol: string,
+  status: string,
+  message: string,
+  records = 0,
+) {
+  ingestionLogs.unshift({
+    time: new Date().toISOString(),
+    symbol,
+    status,
+    message,
+    records,
+  });
+  ingestionLogs.splice(30);
+}
 
 function trackerStatus(rows: TrackerRow[]): IngestionStatus {
   const inProgress = rows.find((row) => row.status === "in_progress");
@@ -40,7 +74,7 @@ function trackerStatus(rows: TrackerRow[]): IngestionStatus {
     completed: rows.filter((row) => row.status === "completed").length,
     pending: rows.filter((row) => row.status === "pending").length,
     failed: rows.filter((row) => row.status === "failed").length,
-    inProgress: inProgress?.symbol ?? "",
+    inProgress: activeSymbol || inProgress?.symbol || "",
     nextRunAt,
     lastSynced,
     lastRecords,
@@ -64,6 +98,20 @@ export async function getIngestionStatus(): Promise<IngestionStatus> {
   } catch {
     return trackerStatus(localTracker);
   }
+}
+
+export async function getIngestionTracker() {
+  const rows = await readRemoteTracker().catch(() => localTracker);
+  return rows.map((row) => ({
+    symbol: row.symbol,
+    status: row.status,
+    totalRecordsInserted: Math.round(Number(row.total_records_inserted ?? 0)),
+    lastUpdated: row.last_updated ?? new Date().toISOString(),
+  }));
+}
+
+export function getIngestionLogs() {
+  return ingestionLogs;
 }
 
 async function seedRemoteTracker() {
@@ -119,15 +167,29 @@ async function processNextSymbol() {
   if (workerRunning) return;
   workerRunning = true;
   let symbol = "";
+  nextRunAt = new Date(Date.now() + fiveMinutes).toISOString();
 
   try {
     const rows = await readRemoteTracker().catch(() => localTracker);
     const next = rows.find((row) => row.status === "pending");
-    if (!next) return;
+    if (!next) {
+      addLog("—", "idle", "No pending symbols in the backfill queue.");
+      return;
+    }
 
     symbol = next.symbol;
+    activeSymbol = symbol;
     next.status = "in_progress";
     next.last_updated = new Date().toISOString();
+    addLog(symbol, "running", "Started fetching one-year OHLCV history.");
+    await supabaseRequest(`dse_backfill_tracker?symbol=eq.${encodeURIComponent(symbol)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        status: "in_progress",
+        last_updated: next.last_updated,
+      }),
+    }).catch(() => undefined);
 
     const history = await scrapeSymbol(symbol);
     if (history.length > 0) {
@@ -142,6 +204,7 @@ async function processNextSymbol() {
     next.total_records_inserted = history.length;
     lastSynced = symbol;
     lastRecords = history.length;
+    addLog(symbol, "completed", `Stored ${history.length} historical records.`, history.length);
     await supabaseRequest(`dse_backfill_tracker?symbol=eq.${encodeURIComponent(symbol)}`, {
       method: "PATCH",
       headers: { Prefer: "return=minimal" },
@@ -158,11 +221,21 @@ async function processNextSymbol() {
         failed.status = "failed";
         failed.last_updated = new Date().toISOString();
       }
+      addLog(symbol, "failed", error instanceof Error ? error.message : "Unknown ingestion error.");
+      await supabaseRequest(`dse_backfill_tracker?symbol=eq.${encodeURIComponent(symbol)}`, {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({
+          status: "failed",
+          last_updated: new Date().toISOString(),
+        }),
+      }).catch(() => undefined);
       logger.warn({ symbol, error }, "DSE ingestion cycle failed");
     } else {
       logger.warn({ error }, "DSE ingestion worker could not select a symbol");
     }
   } finally {
+    activeSymbol = "";
     workerRunning = false;
     nextRunAt = new Date(Date.now() + fiveMinutes).toISOString();
   }
@@ -172,12 +245,13 @@ export async function startIngestion() {
   await seedRemoteTracker();
   if (!workerStarted) {
     workerStarted = true;
-    setTimeout(() => void processNextSymbol(), 1_000);
     setInterval(() => void processNextSymbol(), fiveMinutes);
   }
+  nextRunAt = new Date(Date.now() + fiveMinutes).toISOString();
+  void processNextSymbol();
   return {
     accepted: true,
-    message: "Ingestion worker scheduled. One symbol will be processed every five minutes.",
+    message: "Ingestion worker started. The first pending symbol is being processed now.",
   };
 }
 

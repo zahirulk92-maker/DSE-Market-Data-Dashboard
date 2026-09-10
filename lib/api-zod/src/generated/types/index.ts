@@ -10,6 +10,8 @@ export * from './getMarketStocksParams';
 export * from './healthStatus';
 export * from './historyPoint';
 export * from './ingestionAction';
+export * from './ingestionLog';
 export * from './ingestionStatus';
+export * from './ingestionTrackerRow';
 export * from './marketOverview';
 export * from './marketStock';

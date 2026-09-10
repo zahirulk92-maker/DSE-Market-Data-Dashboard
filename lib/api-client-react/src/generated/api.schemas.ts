@@ -54,6 +54,21 @@ export interface IngestionAction {
   message: string;
 }
 
+export interface IngestionTrackerRow {
+  symbol: string;
+  status: string;
+  totalRecordsInserted: number;
+  lastUpdated: string;
+}
+
+export interface IngestionLog {
+  time: string;
+  symbol: string;
+  status: string;
+  message: string;
+  records: number;
+}
+
 export type GetMarketStocksParams = {
 sector?: string;
 search?: string;

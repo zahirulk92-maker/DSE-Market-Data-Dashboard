@@ -106,6 +106,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/IngestionStatus"
+  /market/ingestion/tracker:
+    get:
+      operationId: getIngestionTracker
+      tags: [market]
+      summary: List ingestion tracker rows
+      responses:
+        "200":
+          description: Backfill tracker rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IngestionTrackerRow"
+  /market/ingestion/logs:
+    get:
+      operationId: getIngestionLogs
+      tags: [market]
+      summary: List recent ingestion activity
+      responses:
+        "200":
+          description: Recent worker activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IngestionLog"
 components:
   schemas:
     HealthStatus:
@@ -199,4 +227,30 @@ components:
         message:
           type: string
       required: [accepted, message]
+    IngestionTrackerRow:
+      type: object
+      properties:
+        symbol:
+          type: string
+        status:
+          type: string
+        totalRecordsInserted:
+          type: integer
+        lastUpdated:
+          type: string
+      required: [symbol, status, totalRecordsInserted, lastUpdated]
+    IngestionLog:
+      type: object
+      properties:
+        time:
+          type: string
+        symbol:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+        records:
+          type: integer
+      required: [time, symbol, status, message, records]
 

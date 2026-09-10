@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import {
   GetIngestionStatusResponse,
+  GetIngestionTrackerResponse,
+  GetIngestionLogsResponse,
   GetMarketOverviewResponse,
   GetMarketStocksQueryParams,
   GetMarketStocksResponse,
@@ -9,7 +11,12 @@ import {
   StartIngestionResponse,
 } from "@workspace/api-zod";
 import { getMarketStocks } from "../lib/dse-data";
-import { getIngestionStatus, startIngestion } from "../lib/ingestion";
+import {
+  getIngestionLogs,
+  getIngestionStatus,
+  getIngestionTracker,
+  startIngestion,
+} from "../lib/ingestion";
 
 const router: IRouter = Router();
 
@@ -58,6 +65,14 @@ router.get("/market/ingestion", async (_req, res) => {
 router.post("/market/ingestion", async (_req, res) => {
   const result = await startIngestion();
   res.status(202).json(StartIngestionResponse.parse(result));
+});
+
+router.get("/market/ingestion/tracker", async (_req, res) => {
+  res.json(GetIngestionTrackerResponse.parse(await getIngestionTracker()));
+});
+
+router.get("/market/ingestion/logs", (_req, res) => {
+  res.json(GetIngestionLogsResponse.parse(getIngestionLogs()));
 });
 
 export default router;

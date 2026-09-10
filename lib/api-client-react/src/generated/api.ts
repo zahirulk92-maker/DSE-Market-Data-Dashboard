@@ -24,7 +24,9 @@ import type {
   HealthStatus,
   HistoryPoint,
   IngestionAction,
+  IngestionLog,
   IngestionStatus,
+  IngestionTrackerRow,
   MarketOverview,
   MarketStock
 } from './api.schemas';
@@ -508,6 +510,160 @@ export function useGetIngestionStatus<TData = Awaited<ReturnType<typeof getInges
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetIngestionStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetIngestionTrackerUrl = () => {
+
+
+
+
+  return `/api/market/ingestion/tracker`
+}
+
+/**
+ * @summary List ingestion tracker rows
+ */
+export const getIngestionTracker = async ( options?: Parameters<typeof customFetch>[1]): Promise<IngestionTrackerRow[]> => {
+
+  return customFetch<IngestionTrackerRow[]>(getGetIngestionTrackerUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetIngestionTrackerQueryKey = () => {
+    return [
+    `/api/market/ingestion/tracker`
+    ] as const;
+    }
+
+
+export const getGetIngestionTrackerQueryOptions = <TData = Awaited<ReturnType<typeof getIngestionTracker>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIngestionTracker>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIngestionTrackerQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIngestionTracker>>> = ({ signal }) => getIngestionTracker({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIngestionTracker>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetIngestionTrackerQueryResult = NonNullable<Awaited<ReturnType<typeof getIngestionTracker>>>
+export type GetIngestionTrackerQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List ingestion tracker rows
+ */
+
+export function useGetIngestionTracker<TData = Awaited<ReturnType<typeof getIngestionTracker>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIngestionTracker>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetIngestionTrackerQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetIngestionLogsUrl = () => {
+
+
+
+
+  return `/api/market/ingestion/logs`
+}
+
+/**
+ * @summary List recent ingestion activity
+ */
+export const getIngestionLogs = async ( options?: Parameters<typeof customFetch>[1]): Promise<IngestionLog[]> => {
+
+  return customFetch<IngestionLog[]>(getGetIngestionLogsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetIngestionLogsQueryKey = () => {
+    return [
+    `/api/market/ingestion/logs`
+    ] as const;
+    }
+
+
+export const getGetIngestionLogsQueryOptions = <TData = Awaited<ReturnType<typeof getIngestionLogs>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIngestionLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIngestionLogsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIngestionLogs>>> = ({ signal }) => getIngestionLogs({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIngestionLogs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetIngestionLogsQueryResult = NonNullable<Awaited<ReturnType<typeof getIngestionLogs>>>
+export type GetIngestionLogsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List recent ingestion activity
+ */
+
+export function useGetIngestionLogs<TData = Awaited<ReturnType<typeof getIngestionLogs>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIngestionLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetIngestionLogsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

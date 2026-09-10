@@ -32,18 +32,23 @@ import {
 } from 'lucide-react';
 import {
   getGetIngestionStatusQueryKey,
+  getGetIngestionLogsQueryKey,
+  getGetIngestionTrackerQueryKey,
   getGetMarketOverviewQueryKey,
   getGetMarketStocksQueryKey,
   getGetStockHistoryQueryKey,
   getHealthCheckQueryKey,
+  useGetIngestionLogs,
   useGetIngestionStatus,
+  useGetIngestionTracker,
   useGetMarketOverview,
   useGetMarketStocks,
   useGetStockHistory,
   useHealthCheck,
   useStartIngestion,
 } from '@workspace/api-client-react';
-import type { HistoryPoint, IngestionStatus, MarketStock } from '@workspace/api-client-react';
+import type { HistoryPoint, IngestionLog, IngestionStatus, IngestionTrackerRow, MarketStock } from '@workspace/api-client-react';
+import { useLocation } from 'wouter';
 
 const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 const compactFormat = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
@@ -63,6 +68,11 @@ function formatDate(value: string | undefined, withTime = true) {
   return new Intl.DateTimeFormat('en-GB', withTime ? {
     day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
   } : { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+}
+
+function formatCountdown(totalSeconds: number) {
+  const safeSeconds = Math.max(0, totalSeconds);
+  return `${String(Math.floor(safeSeconds / 60)).padStart(2, '0')}:${String(safeSeconds % 60).padStart(2, '0')}`;
 }
 
 function valueTone(value: number) {
@@ -208,7 +218,7 @@ function MarketChart({
   );
 }
 
-function IngestionCard({ ingestion, loading, onStart, pending }: { ingestion?: IngestionStatus; loading: boolean; onStart: () => void; pending: boolean }) {
+function IngestionCard({ ingestion, loading, onStart, pending, countdown, running }: { ingestion?: IngestionStatus; loading: boolean; onStart: () => void; pending: boolean; countdown: number; running: boolean }) {
   const progress = ingestion && ingestion.total ? Math.min(100, Math.round((ingestion.completed / ingestion.total) * 100)) : 0;
   return (
     <section className="scanline rounded-lg border border-[#364150] bg-[#1d2632] p-5 text-slate-200 shadow-[0_12px_32px_hsl(222_31%_17%_/_0.12)]">
@@ -217,8 +227,8 @@ function IngestionCard({ ingestion, loading, onStart, pending }: { ingestion?: I
           <p className="font-mono text-[10px] uppercase tracking-[.18em] text-[#a9b6c5]">Ingestion worker</p>
           <h2 className="mt-1 text-lg font-semibold tracking-tight text-white">Historical data pipeline</h2>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-emerald-300">
-          <span className="live-pulse size-1.5 rounded-full bg-emerald-300" /> {ingestion?.inProgress || 'standby'}
+        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 font-mono text-[10px] uppercase tracking-wider ${running ? 'border-emerald-400/30 bg-emerald-400/15 text-emerald-200' : 'border-slate-500/30 bg-slate-500/15 text-slate-300'}`}>
+          <span className={`${running ? 'live-pulse' : ''} size-1.5 rounded-full ${running ? 'bg-emerald-300' : 'bg-slate-400'}`} /> {running ? 'running' : 'standby'}
         </span>
       </div>
       {loading ? <div className="mt-6 space-y-3"><div className="h-2 animate-pulse rounded bg-slate-700" /><div className="h-10 animate-pulse rounded bg-slate-700" /></div> : (
@@ -234,13 +244,13 @@ function IngestionCard({ ingestion, loading, onStart, pending }: { ingestion?: I
             <div className="pl-3"><p className="font-mono text-[10px] uppercase text-[#8493a5]">Last batch</p><p className="mt-1 font-mono text-sm text-white">{formatCompact(ingestion?.lastRecords)}</p></div>
           </div>
           <div className="mt-4 flex items-center justify-between text-[10px] text-[#a9b6c5]">
-            <span className="inline-flex items-center gap-1.5"><Clock3 size={12} /> Next run {formatDate(ingestion?.nextRunAt)}</span>
+             <span className="inline-flex items-center gap-1.5"><Clock3 size={12} /> Next run {formatCountdown(countdown)}</span>
             <span>Synced {formatDate(ingestion?.lastSynced)}</span>
           </div>
         </>
       )}
       <button data-testid="button-start-ingestion" onClick={onStart} disabled={pending} className="mt-5 flex w-full items-center justify-center gap-2 rounded-md bg-[#f4c95d] px-3 py-2.5 text-xs font-bold text-[#1d2632] transition-transform hover:-translate-y-px hover:bg-[#f7d77e] disabled:cursor-wait disabled:opacity-60">
-        {pending ? <LoaderCircle size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />} {pending ? 'Queueing worker' : 'Run ingestion now'}
+         {pending ? <LoaderCircle size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />} {pending ? 'Starting worker' : running ? 'Worker running' : 'Run ingestion now'}
       </button>
     </section>
   );

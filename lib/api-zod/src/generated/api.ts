@@ -112,3 +112,28 @@ export const GetIngestionStatusResponse = zod.object({
 })
 
 
+/**
+ * @summary List ingestion tracker rows
+ */
+export const GetIngestionTrackerResponseItem = zod.object({
+  "symbol": zod.string(),
+  "status": zod.string(),
+  "totalRecordsInserted": zod.number().int(),
+  "lastUpdated": zod.string()
+})
+export const GetIngestionTrackerResponse = zod.array(GetIngestionTrackerResponseItem)
+
+
+/**
+ * @summary List recent ingestion activity
+ */
+export const GetIngestionLogsResponseItem = zod.object({
+  "time": zod.string(),
+  "symbol": zod.string(),
+  "status": zod.string(),
+  "message": zod.string(),
+  "records": zod.number().int()
+})
+export const GetIngestionLogsResponse = zod.array(GetIngestionLogsResponseItem)
+
+
