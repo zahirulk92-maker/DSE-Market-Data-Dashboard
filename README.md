@@ -138,7 +138,7 @@ Supabase credentials are managed outside the application source code.
 
 ## Python collection engine
 
-The Render Blueprint includes a Python Cron Job that runs every five minutes. On each run it:
+The Render Blueprint includes a continuously running Python Background Worker. It runs one collection cycle every five minutes. Each cycle:
 
 - updates the current, sector-wise market snapshot for all available stocks;
 - takes up to three pending symbols from the backfill queue;

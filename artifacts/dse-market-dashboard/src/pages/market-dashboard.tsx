@@ -386,6 +386,15 @@ export default function MarketDashboard() {
               </>}
             </div>
 
+            <section className="mt-5">
+              <div className="mb-3 flex items-center justify-between"><div><p className="font-mono text-[10px] uppercase tracking-[.18em] text-muted-foreground">Historical collection</p><h2 className="mt-1 text-sm font-semibold">Backfill progress</h2></div><span className={`font-mono text-[10px] uppercase ${ingestionRunning ? 'text-emerald-700' : 'text-muted-foreground'}`}>{ingestionRunning ? 'Collector working' : `Next cycle ${formatCountdown(countdown)}`}</span></div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <OverviewCard label="History coverage" value={`${formatCompact(ingestion?.completed)} / ${formatCompact(ingestion?.total)}`} detail={`${formatCompact(ingestion?.pending)} symbols remaining`} icon={Database} tone="positive" />
+                <OverviewCard label="Current task" value={ingestion?.inProgress || 'Waiting'} detail={ingestion?.inProgress ? 'Fetching one-year OHLCV history' : 'Queue is ready for the next cycle'} icon={Activity} />
+                <OverviewCard label="Last completed" value={ingestion?.lastSynced || '—'} detail={`${formatCompact(ingestion?.lastRecords)} historical records saved`} icon={Check} tone="positive" />
+              </div>
+            </section>
+
             <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
               <section className="rounded-lg border border-border bg-card">
                 <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">

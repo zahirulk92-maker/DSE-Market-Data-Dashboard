@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import sys
+import threading
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -17,6 +19,8 @@ LATEST_URL = os.environ["DSE_LATEST_URL"]
 HISTORY_URL = os.environ["DSE_HISTORY_URL"]
 SOURCE_TOKEN = os.environ.get("DSE_DATA_SOURCE_TOKEN")
 BATCH_SIZE = max(1, int(os.environ.get("DSE_BACKFILL_BATCH_SIZE", "3")))
+INTERVAL_SECONDS = max(60, int(os.environ.get("DSE_COLLECTION_INTERVAL_SECONDS", "300")))
+STOP_REQUESTED = threading.Event()
 
 
 def now() -> str:
@@ -133,8 +137,16 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as error:
-        print(f"collector failed: {error}", file=sys.stderr)
-        raise
+    def stop_loop(_signal: int, _frame: Any) -> None:
+        STOP_REQUESTED.set()
+
+    signal.signal(signal.SIGTERM, stop_loop)
+    signal.signal(signal.SIGINT, stop_loop)
+    while not STOP_REQUESTED.is_set():
+        try:
+            main()
+        except Exception as error:
+            print(f"collector failed: {error}", file=sys.stderr)
+        if "--loop" not in sys.argv:
+            break
+        STOP_REQUESTED.wait(INTERVAL_SECONDS)

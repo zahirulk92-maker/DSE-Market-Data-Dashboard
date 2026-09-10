@@ -22,13 +22,14 @@ services:
         sync: false
       - key: DSE_HISTORY_URL
         sync: false
-  - type: cron
+  - type: worker
     name: dse-data-collector
     runtime: python
     region: singapore
-    schedule: "*/5 * * * *"
+    plan: starter
     buildCommand: python -m compileall collector
-    startCommand: python collector/main.py
+    startCommand: python collector/main.py --loop
+    maxShutdownDelaySeconds: 120
     envVars:
       - key: SUPABASE_URL
         sync: false
@@ -42,3 +43,5 @@ services:
         sync: false
       - key: DSE_BACKFILL_BATCH_SIZE
         value: "3"
+      - key: DSE_COLLECTION_INTERVAL_SECONDS
+        value: "300"
