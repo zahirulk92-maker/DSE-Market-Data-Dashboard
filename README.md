@@ -136,17 +136,25 @@ pnpm --filter @workspace/api-spec run codegen
 
 Supabase credentials are managed outside the application source code.
 
-An optional environment variable can be configured for live DSE historical data ingestion:
+## Python collection engine
 
-DSE_HISTORY_ENDPOINT=
+The Render Blueprint includes a Python Cron Job that runs every five minutes. On each run it:
 
-The endpoint may contain a symbol placeholder:
+- updates the current, sector-wise market snapshot for all available stocks;
+- takes up to three pending symbols from the backfill queue;
+- fetches at least the previous 366 days of OHLCV history for those symbols; and
+- saves the snapshot, history, tracker state, and run log to Supabase.
 
-{symbol}
+Before deploying the collector, apply `supabase/migrations/20260911000000_create_dse_collection.sql` in the target Supabase project and add these Render environment variables to both the web service and the Cron Job:
 
-Example concept:
+```text
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<server-only secret>
+DSE_LATEST_URL=<JSON endpoint returning all current DSE stocks>
+DSE_HISTORY_URL=<JSON endpoint; supports {symbol}, {start}, and {end} placeholders>
+```
 
-https://example.com/history/{symbol}
+`DSE_DATA_SOURCE_TOKEN` is optional for providers that require a bearer token. Never place the Supabase service-role key in the React frontend.
 
 Do not commit API keys, database passwords, or other secrets to the repository.
 

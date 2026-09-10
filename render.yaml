@@ -18,5 +18,27 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: DSE_HISTORY_ENDPOINT
+      - key: DSE_LATEST_URL
         sync: false
+      - key: DSE_HISTORY_URL
+        sync: false
+  - type: cron
+    name: dse-data-collector
+    runtime: python
+    region: singapore
+    schedule: "*/5 * * * *"
+    buildCommand: python -m compileall collector
+    startCommand: python collector/main.py
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DSE_LATEST_URL
+        sync: false
+      - key: DSE_HISTORY_URL
+        sync: false
+      - key: DSE_DATA_SOURCE_TOKEN
+        sync: false
+      - key: DSE_BACKFILL_BATCH_SIZE
+        value: "3"

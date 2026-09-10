@@ -71,8 +71,8 @@ router.get("/market/ingestion/tracker", async (_req, res) => {
   res.json(GetIngestionTrackerResponse.parse(await getIngestionTracker()));
 });
 
-router.get("/market/ingestion/logs", (_req, res) => {
-  res.json(GetIngestionLogsResponse.parse(getIngestionLogs()));
+router.get("/market/ingestion/logs", async (_req, res) => {
+  res.json(GetIngestionLogsResponse.parse(await getIngestionLogs()));
 });
 
 export default router;

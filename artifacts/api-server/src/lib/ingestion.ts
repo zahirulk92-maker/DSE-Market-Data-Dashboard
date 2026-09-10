@@ -110,8 +110,28 @@ export async function getIngestionTracker() {
   }));
 }
 
-export function getIngestionLogs() {
-  return ingestionLogs;
+export async function getIngestionLogs() {
+  try {
+    const rows = await supabaseRequest<Array<{
+      started_at: string;
+      finished_at?: string | null;
+      status: string;
+      message: string;
+      records_saved?: number | null;
+      symbol?: string | null;
+    }>>(
+      "dse_ingestion_runs?select=started_at,finished_at,status,message,records_saved,symbol&order=started_at.desc&limit=30",
+    );
+    return rows.map((row) => ({
+      time: row.finished_at ?? row.started_at,
+      symbol: row.symbol ?? "—",
+      status: row.status,
+      message: row.message,
+      records: Math.round(Number(row.records_saved ?? 0)),
+    }));
+  } catch {
+    return ingestionLogs;
+  }
 }
 
 async function seedRemoteTracker() {
@@ -242,17 +262,8 @@ async function processNextSymbol() {
 }
 
 export async function startIngestion() {
-  await seedRemoteTracker();
-  if (!workerStarted) {
-    workerStarted = true;
-    setInterval(() => void processNextSymbol(), fiveMinutes);
-  }
-  nextRunAt = new Date(Date.now() + fiveMinutes).toISOString();
-  void processNextSymbol();
   return {
     accepted: true,
-    message: "Ingestion worker started. The first pending symbol is being processed now.",
+    message: "The Render Python collector runs automatically every five minutes. Check the Ingestion monitor for its latest completed run.",
   };
 }
-
-void startIngestion();
