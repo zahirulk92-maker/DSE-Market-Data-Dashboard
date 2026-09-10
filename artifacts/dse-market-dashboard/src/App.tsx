@@ -5,6 +5,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import MarketDashboard from '@/pages/market-dashboard';
+import HistoricalExplorer from '@/pages/historical-explorer';
+import IngestionMonitor from '@/pages/ingestion-monitor';
 import {
   Route,
   Switch,
@@ -21,6 +23,8 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
          <Route path="/" component={MarketDashboard} />
+         <Route path="/historical" component={HistoricalExplorer} />
+         <Route path="/ingestion" component={IngestionMonitor} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>

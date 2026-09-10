@@ -49,6 +49,7 @@ import {
 } from '@workspace/api-client-react';
 import type { HistoryPoint, IngestionLog, IngestionStatus, IngestionTrackerRow, MarketStock } from '@workspace/api-client-react';
 import { useLocation } from 'wouter';
+import { Sidebar } from '@/components/sidebar';
 
 const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 const compactFormat = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
@@ -286,26 +287,6 @@ function AppHeader({ asOf, health, onRefresh, refreshing }: { asOf?: string; hea
   );
 }
 
-function Sidebar() {
-  return (
-    <aside className="hidden w-[224px] shrink-0 flex-col border-r border-[#364150] bg-[#18212c] text-slate-300 md:flex">
-      <div className="flex h-[70px] items-center gap-3 border-b border-[#364150] px-5">
-        <div className="grid size-8 place-items-center rounded bg-[#f4c95d] text-[#18212c]"><BarChart3 size={18} strokeWidth={2.5} /></div>
-        <div><p className="font-mono text-[10px] font-medium uppercase tracking-[.18em] text-[#f4c95d]">DSE</p><p className="text-sm font-semibold text-white">Market ops</p></div>
-      </div>
-      <div className="px-3 py-6">
-        <p className="px-2 font-mono text-[9px] uppercase tracking-[.18em] text-slate-500">Workspace</p>
-        <nav className="mt-3 space-y-1">
-          <button data-testid="button-nav-overview" className="flex w-full items-center gap-3 rounded-md bg-[#2a3542] px-3 py-2.5 text-left text-xs font-semibold text-white"><Activity size={15} className="text-[#f4c95d]" /> Live overview</button>
-          <button data-testid="button-nav-history" className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-xs text-slate-400 transition-colors hover:bg-[#222d39] hover:text-white"><LineChart size={15} /> Historical explorer</button>
-          <button data-testid="button-nav-ingestion" className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-xs text-slate-400 transition-colors hover:bg-[#222d39] hover:text-white"><Server size={15} /> Ingestion monitor</button>
-        </nav>
-      </div>
-      <div className="mt-auto border-t border-[#364150] p-4"><div className="flex items-center justify-between"><span className="font-mono text-[9px] uppercase tracking-widest text-slate-500">Terminal</span><span className="inline-flex items-center gap-1 font-mono text-[9px] text-emerald-300"><span className="size-1.5 rounded-full bg-emerald-400" /> Online</span></div><p className="mt-2 text-[10px] leading-4 text-slate-500">Focused scan mode<br />Dhaka / UTC+6</p></div>
-    </aside>
-  );
-}
-
 function StockTable({ stocks, loading, error, onRetry, selectedSymbol, onSelect }: { stocks: MarketStock[] | undefined; loading: boolean; error: boolean; onRetry: () => void; selectedSymbol: string; onSelect: (symbol: string) => void }) {
   if (loading) return <div className="space-y-2 p-4">{Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-12 w-full" />)}</div>;
   if (error) return <ErrorState onRetry={onRetry} />;
@@ -386,7 +367,7 @@ export default function MarketDashboard() {
 
   return (
     <div className="flex min-h-[100dvh] bg-background text-foreground">
-      <Sidebar />
+      <Sidebar active="overview" />
       <div className="min-w-0 flex-1">
         <AppHeader asOf={overview?.asOf} health={healthQuery.data?.status} onRefresh={refreshAll} refreshing={overviewQuery.isFetching || ingestionQuery.isFetching} />
         <main className="terminal-grid min-h-[calc(100dvh-70px)] px-4 py-5 md:px-8 md:py-7">
