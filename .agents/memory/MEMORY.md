@@ -1,0 +1,1 @@
+- [API and Supabase patterns](api-and-supabase-patterns.md) — avoid generated parameter collisions and keep Supabase access behind the Replit connector proxy.

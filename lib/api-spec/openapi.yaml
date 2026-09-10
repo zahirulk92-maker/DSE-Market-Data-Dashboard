@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: market
+    description: DSE market data and ingestion operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,86 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /market/overview:
+    get:
+      operationId: getMarketOverview
+      tags: [market]
+      summary: Get the DSE dashboard overview
+      responses:
+        "200":
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketOverview"
+  /market/stocks:
+    get:
+      operationId: getMarketStocks
+      tags: [market]
+      summary: List current DSE market stocks
+      parameters:
+        - name: sector
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current stock list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarketStock"
+  /market/stocks/{symbol}/history:
+    get:
+      operationId: getStockHistory
+      tags: [market]
+      summary: Get historical OHLCV data for a stock
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stock history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoryPoint"
+  /market/ingestion:
+    post:
+      operationId: startIngestion
+      tags: [market]
+      summary: Start or resume the ingestion worker
+      responses:
+        "202":
+          description: Ingestion worker accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionAction"
+    get:
+      operationId: getIngestionStatus
+      tags: [market]
+      summary: Get ingestion queue status
+      responses:
+        "200":
+          description: Ingestion queue status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IngestionStatus"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +115,88 @@ components:
           type: string
       required:
         - status
+    MarketStock:
+      type: object
+      properties:
+        symbol:
+          type: string
+        sector:
+          type: string
+        ltp:
+          type: number
+        ycp:
+          type: number
+        change:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        volume:
+          type: integer
+        updatedAt:
+          type: string
+      required: [symbol, sector, ltp, ycp, change, high, low, volume, updatedAt]
+    HistoryPoint:
+      type: object
+      properties:
+        time:
+          type: string
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        close:
+          type: number
+        volume:
+          type: integer
+      required: [time, open, high, low, close, volume]
+    IngestionStatus:
+      type: object
+      properties:
+        total:
+          type: integer
+        completed:
+          type: integer
+        pending:
+          type: integer
+        failed:
+          type: integer
+        inProgress:
+          type: string
+        nextRunAt:
+          type: string
+        lastSynced:
+          type: string
+        lastRecords:
+          type: integer
+      required: [total, completed, pending, failed, inProgress, nextRunAt, lastSynced, lastRecords]
+    MarketOverview:
+      type: object
+      properties:
+        market:
+          type: string
+        asOf:
+          type: string
+        stocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketStock"
+        sectors:
+          type: array
+          items:
+            type: string
+        ingestion:
+          $ref: "#/components/schemas/IngestionStatus"
+      required: [market, asOf, stocks, sectors, ingestion]
+    IngestionAction:
+      type: object
+      properties:
+        accepted:
+          type: boolean
+        message:
+          type: string
+      required: [accepted, message]
 
