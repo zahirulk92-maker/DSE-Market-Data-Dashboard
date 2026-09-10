@@ -251,7 +251,7 @@ function IngestionCard({ ingestion, loading, onStart, pending, countdown, runnin
         </>
       )}
       <button data-testid="button-start-ingestion" onClick={onStart} disabled={pending} className="mt-5 flex w-full items-center justify-center gap-2 rounded-md bg-[#f4c95d] px-3 py-2.5 text-xs font-bold text-[#1d2632] transition-transform hover:-translate-y-px hover:bg-[#f7d77e] disabled:cursor-wait disabled:opacity-60">
-         {pending ? <LoaderCircle size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />} {pending ? 'Starting worker' : running ? 'Worker running' : 'Run ingestion now'}
+         {pending ? <LoaderCircle size={14} className="animate-spin" /> : <Play size={14} fill="currentColor" />} {pending ? 'Checking collector' : running ? 'Worker running' : 'Check collector schedule'}
       </button>
     </section>
   );
